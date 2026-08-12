@@ -30,7 +30,6 @@ Smart Stage remplace le suivi traditionnel par fichiers Excel et échanges d'e-m
 - [Documentation de l'API](#documentation-de-lapi)
 - [Tests automatisés](#tests-automatisés)
 - [Sécurité](#sécurité)
-- [Captures d'écran](#captures-décran)
 - [Auteur](#auteur)
 
 ---
@@ -220,11 +219,6 @@ La suite couvre notamment l'authentification et, surtout, la **règle de cloison
 
 ---
 
-## Captures d'écran
-
-*(à ajouter — dashboard RH, vue Kanban, rapports...)*
-
----
 
 ## Auteur
 
