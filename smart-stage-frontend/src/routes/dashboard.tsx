@@ -14,6 +14,7 @@ import { logout, useSession, type Role } from "@/lib/session";
 import { AppDataProvider } from "@/lib/store";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { FaqChatbot } from "@/components/faq-chatbot";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardLayout,
@@ -137,6 +138,8 @@ function DashboardLayout() {
           </main>
         </div>
       </div>
+
+      <FaqChatbot />
     </AppDataProvider>
   );
 }

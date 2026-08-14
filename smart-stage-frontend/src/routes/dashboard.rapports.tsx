@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Download } from "lucide-react";
+import { Download, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { BarRow, Panel, StatCard } from "@/components/dashboard-ui";
-import { PrimaryButton } from "@/components/form-ui";
+import { PrimaryButton, Select } from "@/components/form-ui";
 import { useSession } from "@/lib/session";
 import { useStore, type Account } from "@/lib/store";
 import type { Task } from "@/lib/demo-data";
@@ -185,6 +185,7 @@ function ReportsPage() {
           <Panel title="Mon évolution hebdomadaire" description="Tâches terminées par semaine">
             <WeeklyChart data={weekly} max={maxWeekly} />
           </Panel>
+          <AiWeeklySummarySelf stagiaireId={user.id} />
         </>
       ) : null}
 
@@ -222,6 +223,7 @@ function ReportsPage() {
           <Panel title="Évolution hebdomadaire" description="Tâches terminées par semaine">
             <WeeklyChart data={weekly} max={maxWeekly} />
           </Panel>
+          <AiWeeklySummaryPicker interns={perIntern} />
         </>
       ) : null}
 
@@ -251,14 +253,14 @@ function ReportsPage() {
               <WeeklyChart data={weekly} max={maxWeekly} />
             </Panel>
           </div>
+          <AiWeeklySummaryPicker interns={perIntern} />
         </>
       ) : null}
     </div>
   );
 }
 
-function StagiaireSummary({ tasks }: { tasks: Task[] }) {
-  const total = tasks.length;
+function StagiaireSummary({ tasks }: { tasks: Task[] }) {  const total = tasks.length;
   const done = tasks.filter((t) => t.status === "Terminée").length;
   const inProgress = tasks.filter((t) => t.status === "En cours").length;
   const late = tasks.filter((t) => t.status === "En retard").length;
@@ -371,5 +373,103 @@ function WeeklyChart({ data, max }: { data: { week: string; done: number }[]; ma
         </div>
       ))}
     </div>
+  );
+}
+
+/**
+ * Résumé IA de la semaine pour SA PROPRE activité (stagiaire connecté) :
+ * pas de sélecteur, un seul bouton "Générer".
+ */
+function AiWeeklySummarySelf({ stagiaireId }: { stagiaireId: string }) {
+  const [summary, setSummary] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const generate = async () => {
+    setLoading(true);
+    setSummary(null);
+    try {
+      const res = await api.post<{ summary: string }>(`/ai/summarize-week/${stagiaireId}`);
+      setSummary(res.summary);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erreur lors de la génération du résumé");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Panel
+      title="Résumé de ma semaine (IA)"
+      description="Basé sur mon journal et mes tâches des 7 derniers jours"
+      action={
+        <PrimaryButton onClick={() => void generate()} disabled={loading}>
+          <span className="inline-flex items-center gap-1.5">
+            <Sparkles className="size-4" />
+            {loading ? "Génération…" : "Générer"}
+          </span>
+        </PrimaryButton>
+      }
+    >
+      {summary ? (
+        <p className="text-sm text-muted-foreground">{summary}</p>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Cliquez « Générer » pour obtenir une synthèse rédigée par l'IA.
+        </p>
+      )}
+    </Panel>
+  );
+}
+
+/**
+ * Résumé IA de la semaine pour un stagiaire choisi dans une liste
+ * (Encadrant : ses stagiaires ; RH : tous les stagiaires).
+ */
+function AiWeeklySummaryPicker({ interns }: { interns: { id: string; name: string }[] }) {
+  const [selected, setSelected] = useState(interns[0]?.id ?? "");
+  const [summary, setSummary] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const generate = async () => {
+    if (!selected) return;
+    setLoading(true);
+    setSummary(null);
+    try {
+      const res = await api.post<{ summary: string }>(`/ai/summarize-week/${selected}`);
+      setSummary(res.summary);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erreur lors de la génération du résumé");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (interns.length === 0) return null;
+
+  return (
+    <Panel title="Résumé de la semaine (IA)" description="Basé sur le journal et les tâches des 7 derniers jours">
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={selected}
+          onChange={(e) => {
+            setSelected(e.target.value);
+            setSummary(null);
+          }}
+        >
+          {interns.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.name}
+            </option>
+          ))}
+        </Select>
+        <PrimaryButton onClick={() => void generate()} disabled={loading || !selected}>
+          <span className="inline-flex items-center gap-1.5">
+            <Sparkles className="size-4" />
+            {loading ? "Génération…" : "Générer"}
+          </span>
+        </PrimaryButton>
+      </div>
+      {summary ? <p className="mt-3 text-sm text-muted-foreground">{summary}</p> : null}
+    </Panel>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Panel } from "@/components/dashboard-ui";
 import {
@@ -290,6 +290,25 @@ function EncadrantSkills() {
       },
     }));
 
+  const [suggestingSkillId, setSuggestingSkillId] = useState<string | null>(null);
+
+  const suggestLevel = async (skillId: string) => {
+    if (!selected) return;
+    setSuggestingSkillId(skillId);
+    try {
+      const res = await api.post<{ suggestedLevel: SkillLevel; reasoning: string }>(
+        "/ai/suggest-skill-level",
+        { stagiaireId: selected, skillId },
+      );
+      setDraft(skillId, { level: res.suggestedLevel, comment: res.reasoning });
+      toast.success("Suggestion appliquée — vérifiez avant d'enregistrer");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erreur lors de la suggestion");
+    } finally {
+      setSuggestingSkillId(null);
+    }
+  };
+
   const saveAll = async () => {
     const entries = Object.entries(drafts).filter(([, d]) => d.level);
     if (entries.length === 0) {
@@ -367,6 +386,17 @@ function EncadrantSkills() {
                     <p className="mt-1 text-xs text-muted-foreground">{s.description}</p>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       <Field label="Niveau">
+                        <div className="mb-1.5 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => void suggestLevel(s._id)}
+                            disabled={suggestingSkillId === s._id}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-60"
+                          >
+                            <Sparkles className="size-3.5" />
+                            {suggestingSkillId === s._id ? "…" : "Suggérer avec l'IA"}
+                          </button>
+                        </div>
                         <Select
                           value={draft?.level ?? saved?.level ?? ""}
                           onChange={(e) => setDraft(s._id, { level: e.target.value as SkillLevel })}

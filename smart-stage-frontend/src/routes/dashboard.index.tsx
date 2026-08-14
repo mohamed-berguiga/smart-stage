@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Check, FileText, Power, Trash2, Upload, Users } from "lucide-react";
+import { Check, FileText, Power, Sparkles, Trash2, Upload, Users } from "lucide-react";
 import { AttestationPanel } from "@/components/attestation-panel";
 import { ImportStagiairesModal } from "@/components/import-stagiaires";
 
@@ -16,6 +16,7 @@ import {
 } from "@/components/form-ui";
 import { useSession, type Role } from "@/lib/session";
 import { useStore, type NewAccountInput } from "@/lib/store";
+import { api, ApiError } from "@/lib/api";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({
@@ -97,6 +98,8 @@ function RhOverview() {
 
   return (
     <>
+      <AiDataAssistant />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Stagiaires actifs" value={String(internAccounts.filter((a) => a.active).length)} hint="tous départements" />
         <StatCard label="Encadrants" value={String(supervisorAccounts.length)} tone="success" />
@@ -696,5 +699,74 @@ function StagiaireOverview() {
         </div>
       </Modal>
     </>
+  );
+}
+
+/**
+ * Assistant IA "interrogez vos données" (RH uniquement). Le backend construit
+ * lui-même le contexte à partir des vraies données (voir aiController.js) —
+ * l'IA ne fait que rédiger la réponse en français à partir de ce contexte.
+ */
+type QAEntry = { question: string; answer: string };
+
+function AiDataAssistant() {
+  const [question, setQuestion] = useState("");
+  const [history, setHistory] = useState<QAEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const ask = async () => {
+    if (!question.trim()) return;
+    const q = question.trim();
+    setLoading(true);
+    try {
+      const res = await api.post<{ answer: string }>("/ai/ask-data", { question: q });
+      setHistory((prev) => [...prev, { question: q, answer: res.answer }]);
+      setQuestion("");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erreur lors de la génération de la réponse");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Panel
+      title="Assistant IA — interrogez vos données"
+      description="Posez une question en langage naturel sur vos stagiaires et vos tâches"
+    >
+      <div className="space-y-3">
+        {history.length === 0 ? (
+          <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+            Exemples : « Combien de stagiaires sont en retard sur leurs tâches ? », « Quel
+            département a le plus de stagiaires ? », « Qui a le moins de tâches terminées ? »
+          </p>
+        ) : (
+          <ul className="max-h-72 space-y-3 overflow-y-auto">
+            {history.map((h, i) => (
+              <li key={i} className="rounded-lg border border-border p-3 text-sm">
+                <p className="font-medium">{h.question}</p>
+                <p className="mt-1.5 text-muted-foreground">{h.answer}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex gap-2">
+          <TextInput
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="Posez votre question…"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void ask();
+            }}
+          />
+          <PrimaryButton onClick={() => void ask()} disabled={loading}>
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles className="size-4" />
+              {loading ? "…" : "Demander"}
+            </span>
+          </PrimaryButton>
+        </div>
+      </div>
+    </Panel>
   );
 }

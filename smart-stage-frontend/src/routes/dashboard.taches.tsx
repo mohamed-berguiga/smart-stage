@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Paperclip, History as HistoryIcon } from "lucide-react";
+import { Paperclip, History as HistoryIcon, Sparkles } from "lucide-react";
 import { Panel, PriorityBadge, StatusBadge } from "@/components/dashboard-ui";
 import { KanbanBoard } from "@/components/kanban-board";
 
@@ -560,6 +560,7 @@ function TasksPage() {
                 priority: data.priority,
                 status: data.status,
                 dueDate: data.dueDate,
+                description: data.description,
               })
             : addTask({
                 title: data.title,
@@ -569,6 +570,7 @@ function TasksPage() {
                 dueDate: data.dueDate,
                 assignedToId: data.assignedToId,
                 isPersonal: role === "STAGIAIRE",
+                description: data.description,
               });
 
           action
@@ -604,6 +606,7 @@ function TaskFormModal({
     status: TaskStatus;
     dueDate?: string | undefined;
     assignedToId: string;
+    description?: string | undefined;
   }) => void;
 }) {
   const [title, setTitle] = useState("");
@@ -612,6 +615,8 @@ function TaskFormModal({
   const [priority, setPriority] = useState<TaskPriority>("Moyenne");
   const [status, setStatus] = useState<TaskStatus>("A faire");
   const [dueDate, setDueDate] = useState("");
+  const [description, setDescription] = useState("");
+  const [generatingDescription, setGeneratingDescription] = useState(false);
   const [key, setKey] = useState("");
 
   // Réinitialise les champs quand la modale s'ouvre ou change de tâche.
@@ -625,7 +630,27 @@ function TaskFormModal({
     setPriority(editing?.priority ?? "Moyenne");
     setStatus(editing?.status === "En retard" ? "En cours" : editing?.status ?? "A faire");
     setDueDate("");
+    setDescription(editing?.description ?? "");
   }
+
+  const generateDescription = async () => {
+    if (!title.trim()) {
+      toast.error("Renseignez d'abord un intitulé de tâche.");
+      return;
+    }
+    setGeneratingDescription(true);
+    try {
+      const res = await api.post<{ description: string }>("/ai/generate-task-description", {
+        title: title.trim(),
+        type,
+      });
+      setDescription(res.description);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Erreur lors de la génération");
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
 
   return (
     <Modal
@@ -640,6 +665,25 @@ function TaskFormModal({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Intégrer la page de connexion"
+          />
+        </Field>
+        <Field label="Description">
+          <div className="mb-1.5 flex justify-end">
+            <button
+              type="button"
+              onClick={() => void generateDescription()}
+              disabled={generatingDescription}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-60"
+            >
+              <Sparkles className="size-3.5" />
+              {generatingDescription ? "Génération…" : "Générer avec l'IA"}
+            </button>
+          </div>
+          <TextArea
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Décrivez la tâche, ou laissez l'IA la rédiger pour vous (renseignez d'abord un intitulé)…"
           />
         </Field>
         {!editing ? (
@@ -703,6 +747,7 @@ function TaskFormModal({
                 status,
                 dueDate: dueDate || undefined,
                 assignedToId,
+                description: description || undefined,
               });
             }}
           >

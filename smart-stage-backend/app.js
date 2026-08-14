@@ -20,6 +20,7 @@ const skillRoutes = require('./routes/skillRoutes');
 const attestationRoutes = require('./routes/attestationRoutes');
 const importRoutes = require('./routes/importRoutes');
 const journalRoutes = require('./routes/journalRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
@@ -90,6 +91,7 @@ app.use('/api/skills', skillRoutes);
 app.use('/api/attestations', attestationRoutes);
 app.use('/api/imports', importRoutes);
 app.use('/api/journal', journalRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

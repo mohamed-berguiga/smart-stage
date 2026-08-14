@@ -12,6 +12,7 @@ export type Task = {
   createdBy: string;
   createdAt?: string;
   isPersonal?: boolean;
+  description?: string;
 };
 
 export const departments = [

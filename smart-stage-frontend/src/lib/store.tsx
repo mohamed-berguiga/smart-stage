@@ -67,6 +67,7 @@ function mapApiTask(t: any): Task {
     createdBy: t.creator ? `${t.creator.firstName} ${t.creator.lastName}` : "",
     createdAt: t.createdAt,
     isPersonal: !!t.isPersonal,
+    description: t.description ?? "",
   };
 }
 
@@ -78,6 +79,7 @@ export type NewTaskInput = {
   dueDate?: string | undefined;
   assignedToId: string;
   isPersonal?: boolean | undefined;
+  description?: string | undefined;
 };
 
 export type TaskPatchInput = {
@@ -86,6 +88,7 @@ export type TaskPatchInput = {
   priority?: TaskPriority | undefined;
   status?: TaskStatus | undefined;
   dueDate?: string | undefined;
+  description?: string | undefined;
 };
 
 type Store = {
@@ -300,6 +303,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         dueDate: input.dueDate,
         assignedTo: input.assignedToId,
         isPersonal: !!input.isPersonal,
+        description: input.description,
       });
       await refreshTasks();
     },
