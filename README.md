@@ -79,6 +79,14 @@ Chaque rôle ne voit **que** les données qui le concernent — cette règle de 
 - Notifications in-app (cloche avec compteur) **et par e-mail**
 - Déclenchées automatiquement sur les événements clés (nouvelle tâche, tâche terminée, attestation disponible...)
 
+### Intelligence artificielle (Google Gemini)
+Cinq fonctionnalités IA intégrées, toutes construites autour des **vraies données** de la plateforme (jamais d'invention) :
+- **Auto-rédaction des descriptions de tâches** — l'encadrant tape un titre, l'IA propose une description détaillée
+- **Résumé hebdomadaire automatique** — synthèse en langage naturel du journal + des tâches de la semaine d'un stagiaire
+- **Assistant RH "interrogez vos données"** — questions en langage naturel sur les stagiaires/tâches, répondues à partir d'un contexte construit côté serveur (aucune requête générée par l'IA, aucun risque d'injection)
+- **Chatbot d'aide intégré** — bulle flottante qui répond aux questions sur l'utilisation de l'application
+- **Suggestion de niveau de compétence** — l'IA analyse les tâches terminées d'un stagiaire et propose un niveau, que l'encadrant valide ou ajuste
+
 ### Compte utilisateur
 - Connexion, **mot de passe oublié** (lien envoyé par e-mail), changement de mot de passe depuis son profil
 
@@ -100,6 +108,7 @@ Chaque rôle ne voit **que** les données qui le concernent — cette règle de 
 - MongoDB + Mongoose
 - JWT (`jsonwebtoken`) + `bcryptjs` pour l'authentification
 - `multer` (upload de fichiers), `pdfkit` (génération de PDF), `nodemailer` (e-mails)
+- `@google/genai` — intégration IA (Google Gemini)
 - Sécurité : `helmet`, `express-rate-limit`, `express-mongo-sanitize`
 
 **Outils**
@@ -147,7 +156,9 @@ npm install
 cp .env.example .env
 ```
 
-Renseignez au minimum `MONGO_URI` et `JWT_SECRET` dans `.env` (voir les commentaires du fichier pour la configuration optionnelle de l'envoi d'e-mails).
+Renseignez au minimum `MONGO_URI` et `JWT_SECRET` dans `.env` (voir les commentaires du fichier pour la configuration optionnelle de l'envoi d'e-mails et de l'intégration IA).
+
+Pour les fonctionnalités IA (gratuit, sans carte bancaire) : créez une clé sur [aistudio.google.com](https://aistudio.google.com) → "Get API key", puis renseignez `GEMINI_API_KEY` dans `.env`.
 
 ```bash
 node seed.js     # crée des comptes et données de démonstration
@@ -204,7 +215,7 @@ cd backend
 npm test
 ```
 
-La suite couvre notamment l'authentification et, surtout, la **règle de cloisonnement des données par rôle** (un encadrant ne doit jamais voir les stagiaires ou tâches d'un autre encadrant, un stagiaire ne voit jamais les tâches d'un autre stagiaire).
+La suite couvre notamment l'authentification, la génération IA (avec l'appel externe simulé, pour ne pas dépendre du réseau) et, surtout, la **règle de cloisonnement des données par rôle** (un encadrant ne doit jamais voir les stagiaires ou tâches d'un autre encadrant, un stagiaire ne voit jamais les tâches d'un autre stagiaire).
 
 ---
 
