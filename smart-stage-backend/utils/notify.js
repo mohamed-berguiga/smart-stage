@@ -1,14 +1,24 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const sendEmail = require('./sendEmail');
+const { emitToUser } = require('./socket');
 
 /**
- * Crée une notification in-app ET envoie un email correspondant.
+ * Crée une notification in-app, la pousse en TEMPS RÉEL via Socket.io au
+ * navigateur ouvert (si connecté), et envoie un email correspondant.
  * Utilisé par tous les contrôleurs existants (tasks, comments, attestations,
  * skills...) sans qu'ils aient besoin d'être modifiés individuellement.
  */
 async function notify(userId, message, type) {
   const notification = await Notification.create({ user: userId, message, type });
+
+  // Temps réel : pousse immédiatement au navigateur, sans attendre le
+  // prochain rafraîchissement automatique (polling) de secours.
+  try {
+    emitToUser(userId.toString(), 'notification:new', notification);
+  } catch (err) {
+    console.error('Erreur lors de la diffusion Socket.io :', err.message);
+  }
 
   try {
     const user = await User.findById(userId).select('email firstName');
@@ -25,8 +35,6 @@ async function notify(userId, message, type) {
       });
     }
   } catch (err) {
-    // Une erreur d'envoi d'email ne doit jamais faire échouer l'action
-    // principale (création de tâche, etc.) — on logue simplement.
     console.error("Erreur lors de l'envoi de l'email de notification :", err.message);
   }
 

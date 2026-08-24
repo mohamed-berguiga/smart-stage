@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
+import { connectSocket } from "@/lib/socket";
 
 type ApiNotification = {
   _id: string;
@@ -43,9 +44,25 @@ export function NotificationBell() {
 
   useEffect(() => {
     void refresh();
-    // Rafraîchissement léger toutes les 30s pour garder le compteur à jour.
+    // Rafraîchissement de secours toutes les 30s (si le socket est déconnecté).
     const interval = setInterval(() => void refresh(), 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Écoute en temps réel : dès qu'une notification est créée côté serveur,
+  // elle apparaît instantanément ici, sans attendre le polling de secours.
+  useEffect(() => {
+    const socket = connectSocket();
+    if (!socket) return;
+
+    const handleNew = (notification: ApiNotification) => {
+      setNotifications((prev) => [notification, ...prev]);
+    };
+
+    socket.on("notification:new", handleNew);
+    return () => {
+      socket.off("notification:new", handleNew);
+    };
   }, []);
 
   useEffect(() => {

@@ -9,7 +9,9 @@ import {
 } from "react";
 import { type Task, type TaskPriority, type TaskStatus } from "@/lib/demo-data";
 import { api } from "@/lib/api";
-import { useSession } from "@/lib/session";
+import { useSession, logout } from "@/lib/session";
+import { connectSocket, disconnectSocket } from "@/lib/socket";
+import { toast } from "sonner";
 
 export type Account = {
   id: string;
@@ -281,10 +283,36 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     void refreshDepartments();
   }, [user, refreshTasks, refreshMyStagiaires, refreshAccounts, refreshDepartments]);
 
-  // Pas de WebSocket dans ce projet : on simule un semblant de "temps réel"
-  // en rafraîchissant les tâches en arrière-plan. Un encadrant qui crée une
-  // tâche verra son apparition chez le stagiaire sans que celui-ci n'ait
-  // besoin d'appuyer sur F5, avec un délai de quelques secondes maximum.
+  // Connexion Socket.io tant qu'un utilisateur est connecté (pour les
+  // notifications en temps réel, et la déconnexion forcée si le RH
+  // désactive ce compte pendant qu'il est ouvert).
+  useEffect(() => {
+    if (!user) {
+      disconnectSocket();
+      return;
+    }
+    const socket = connectSocket();
+
+    const handleDeactivated = () => {
+      toast.error("Votre compte a été désactivé. Vous allez être déconnecté.");
+      logout();
+      // Rechargement complet (pas juste une navigation) pour repartir sur un
+      // état propre — évite tout état React périmé après la déconnexion forcée.
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1500);
+    };
+
+    socket?.on("account:deactivated", handleDeactivated);
+
+    return () => {
+      socket?.off("account:deactivated", handleDeactivated);
+      disconnectSocket();
+    };
+  }, [user]);
+
+  // Filet de sécurité : rafraîchit les tâches en arrière-plan au cas où un
+  // événement serait manqué (ex: coupure réseau momentanée du socket).
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => {

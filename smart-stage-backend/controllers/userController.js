@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const Stage = require('../models/Stage');
+const { emitToUser } = require('../utils/socket');
 
 /**
  * POST /api/users
@@ -90,6 +91,15 @@ const toggleUserStatus = asyncHandler(async (req, res) => {
   }
   user.status = !user.status;
   await user.save();
+
+  if (!user.status) {
+    // Compte désactivé : si la personne a une session ouverte quelque part,
+    // on la déconnecte immédiatement plutôt que d'attendre qu'elle recharge.
+    emitToUser(user._id.toString(), 'account:deactivated', {
+      message: 'Votre compte a été désactivé par le RH.',
+    });
+  }
+
   res.json(user);
 });
 

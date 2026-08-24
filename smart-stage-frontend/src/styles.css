@@ -144,6 +144,11 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    /* Fondu doux sur les couleurs (fond, texte, bordures) à chaque bascule
+       clair/sombre, au lieu d'un changement instantané et brusque. */
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: ease-out;
+    transition-duration: 250ms;
   }
 
   body {
@@ -170,4 +175,21 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
+}
+
+/* Fondu léger à chaque changement de page dans le dashboard (voir dashboard.tsx,
+   qui remonte ce conteneur — via key={pathname} — à chaque navigation). */
+@keyframes page-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-page-fade {
+  animation: page-fade 0.22s ease-out;
 }
