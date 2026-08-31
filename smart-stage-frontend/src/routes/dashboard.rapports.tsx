@@ -359,19 +359,25 @@ function StatusBars({ tasks }: { tasks: Task[] }) {
   );
 }
 
-function WeeklyChart({ data, max }: { data: { week: string; done: number }[]; max: number }) {
+function WeeklyChart({ data }: { data: { week: string; done: number }[]; max?: number }) {
+  const totalMonth = data.reduce((sum, w) => sum + w.done, 0);
   return (
-    <div className="flex h-40 items-end gap-4">
-      {data.map((w) => (
-        <div key={w.week} className="flex flex-1 flex-col items-center gap-2">
-          <span className="text-xs font-semibold tabular-nums">{w.done}</span>
-          <span
-            className="w-full rounded-t-md bg-primary"
-            style={{ height: `${(w.done / max) * 100}%` }}
-          />
-          <span className="text-xs text-muted-foreground">{w.week}</span>
-        </div>
-      ))}
+    <div className="flex h-40 items-end gap-6">
+      {data.map((w) => {
+        const pct = totalMonth > 0 ? Math.max((w.done / totalMonth) * 100, w.done > 0 ? 4 : 2) : 2;
+        return (
+          <div key={w.week} className="flex h-full flex-1 flex-col items-center gap-2">
+            <span className="text-xs font-semibold tabular-nums">{w.done}</span>
+            <div className="flex w-full flex-1 items-end justify-center">
+              <span
+                className="w-3 rounded-t-md bg-primary transition-all"
+                style={{ height: `${pct}%` }}
+              />
+            </div>
+            <span className="text-xs text-muted-foreground">{w.week}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -472,4 +478,4 @@ function AiWeeklySummaryPicker({ interns }: { interns: { id: string; name: strin
       {summary ? <p className="mt-3 text-sm text-muted-foreground">{summary}</p> : null}
     </Panel>
   );
-}
+} 
