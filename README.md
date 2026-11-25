@@ -14,7 +14,7 @@ Smart Stage remplace le suivi traditionnel par fichiers Excel et échanges d'e-m
 | **Frontend** | React (TanStack Start) + Tailwind CSS |
 | **Backend** | Node.js / Express.js / MongoDB |
 | **Authentification** | JWT + bcrypt |
-| **Tests** | Jest + Supertest (15 tests automatisés) |
+| **Tests** | Jest + Supertest (25 tests automatisés) |
 | **Documentation API** | Swagger / OpenAPI (36 routes documentées) |
 
 ---
@@ -99,6 +99,7 @@ Cinq fonctionnalités IA intégrées, toutes construites autour des **vraies don
 ## Stack technique
 
 **Frontend**
+- Interface générée avec l'outil [Lovable](https://lovable.dev) (React + TypeScript), puis adaptée et connectée à l'API (le backend, la sécurité, l'intégration IA et les tests sont écrits à la main)
 - React 19 + [TanStack Start](https://tanstack.com/start) (routing basé sur les fichiers, SSR)
 - Tailwind CSS + composants shadcn/ui
 - `@dnd-kit` (glisser-déposer Kanban), `xlsx` (import/export Excel)
@@ -211,9 +212,19 @@ http://localhost:8000/api-docs
 ## Tests automatisés
 
 ```bash
-cd backend
+cd smart-stage-backend
 npm test
 ```
+
+**25 tests** (Jest + Supertest, base MongoDB en mémoire avec `mongodb-memory-server`, appels à Gemini simulés avec `jest.mock`) :
+
+| Fichier | Tests | Ce qui est vérifié |
+|---|---|---|
+| `auth.test.js` | 7 | connexion, compte désactivé, mot de passe oublié sans fuite d'information, token absent ou invalide |
+| `rbac.test.js` | 8 | cloisonnement des stagiaires et des tâches par rôle, droits de création |
+| `ai-skill.test.js` | 4 | suggestion de niveau : rôle, périmètre, JSON valide, niveau invalide |
+| `ai-summarize.test.js` | 3 | assistant RH : rôle, question vide, prompt construit à partir des vraies données |
+| `ai-assist.test.js` | 3 | chatbot FAQ (rôle transmis au modèle), description de tâche (titre requis), résumé de semaine (cloisonnement) |
 
 La suite couvre notamment l'authentification, la génération IA (avec l'appel externe simulé, pour ne pas dépendre du réseau) et, surtout, la **règle de cloisonnement des données par rôle** (un encadrant ne doit jamais voir les stagiaires ou tâches d'un autre encadrant, un stagiaire ne voit jamais les tâches d'un autre stagiaire).
 
@@ -226,6 +237,7 @@ La suite couvre notamment l'authentification, la génération IA (avec l'appel e
 - Protection anti-brute-force sur la connexion (`express-rate-limit`)
 - Neutralisation des tentatives d'injection NoSQL (`express-mongo-sanitize`)
 - En-têtes de sécurité HTTP (`helmet`)
+- CORS limité à l'origine du frontend (`CLIENT_URL`), jamais `*` (cookies/identifiants autorisés)
 - Liste blanche des types de fichiers autorisés à l'upload
 
 ---

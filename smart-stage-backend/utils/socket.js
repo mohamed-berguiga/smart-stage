@@ -14,7 +14,7 @@ let io;
 function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || '*',
+      origin: process.env.CLIENT_URL || 'http://localhost:8080', // jamais '*' avec credentials
       credentials: true,
     },
   });
