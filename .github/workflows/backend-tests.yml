@@ -1,0 +1,52 @@
+name: Tests backend
+
+# Lance les tests automatisés du backend à chaque push et à chaque pull request.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "smart-stage-backend/**"
+      - ".github/workflows/backend-tests.yml"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Jest (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        node: [20, 22]
+
+    defaults:
+      run:
+        working-directory: smart-stage-backend
+
+    env:
+      NODE_ENV: test
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: smart-stage-backend/package-lock.json
+
+      # mongodb-memory-server télécharge un binaire MongoDB : on le garde en cache entre deux exécutions
+      - name: Cache du binaire MongoDB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('smart-stage-backend/package-lock.json') }}
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Lancer les tests (Jest + Supertest)
+        run: npm test -- --ci

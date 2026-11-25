@@ -1,5 +1,7 @@
 # Smart Stage — Optimizing Internship Management
 
+[![Tests backend](https://github.com/mohamed-berguiga/smart-stage/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/mohamed-berguiga/smart-stage/actions/workflows/backend-tests.yml)
+
 Plateforme web de **gestion centralisée des stages en entreprise**, développée dans le cadre d'un stage chez **LEONI Wiring Systems Tunisia** (Messadine, Sousse).
 
 Smart Stage remplace le suivi traditionnel par fichiers Excel et échanges d'e-mails par une plateforme unique où le service RH, les encadrants et les stagiaires disposent chacun d'un espace dédié : gestion des comptes et affectations, suivi des tâches (avec vue Kanban), compétences, journal de stage, attestations, rapports et statistiques.
@@ -215,6 +217,8 @@ http://localhost:8000/api-docs
 cd smart-stage-backend
 npm test
 ```
+
+**Intégration continue** : à chaque push sur `main` et à chaque pull request, GitHub Actions installe le backend et lance ces tests sur Node.js 20 et 22 (workflow `.github/workflows/backend-tests.yml`).
 
 **25 tests** (Jest + Supertest, base MongoDB en mémoire avec `mongodb-memory-server`, appels à Gemini simulés avec `jest.mock`) :
 
